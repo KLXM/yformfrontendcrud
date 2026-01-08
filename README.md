@@ -1,6 +1,7 @@
 # oneFileYFormCRUD
 
 Frontend-CRUD für REDAXO YForm Tabellen mit flexiblen CSS-Frameworks
+(Kurzanleitung für Beginners/Designers zuunterst)
 
 ## YFormDataListRenderer Class
 
@@ -367,3 +368,118 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 ```
+
+
+# Kurzanleitung für Beginner/Webdesigner:
+
+
+## YForm Data List Renderer – Installationsanleitung
+
+Diese Anleitung beschreibt die Einrichtung des **YFormDataListRenderer** für REDAXO 5 mit YForm.
+
+---
+
+### 1) Voraussetzungen
+
+- AddOn **yform** aktiviert
+- YForm-Tabelle vorhanden (z. B. `rex_meinetabelle`)
+- Tabelle hat ein Feld `status` (checkbox, Default 1)
+
+---
+
+### 2) Class einbinden
+
+#### Datei kopieren
+`YFormDataListRenderer.php` kopieren nach:
+```
+/redaxo/src/addons/project/lib/
+```
+
+#### Boot-Datei anpassen
+Folgenden Code in `/redaxo/src/addons/project/boot.php` einfügen:
+
+```php
+require_once __DIR__ . '/lib/YFormDataListRenderer.php';
+```
+
+#### AddOn re-installieren
+Im Backend unter **Addons > Project**: auf **re-installieren** klicken
+
+---
+
+### 3) Modul-Ausgabe (Minimal)
+
+```php
+$renderer = new YFormDataListRenderer();
+$renderer->setTableName('rex_meinetabelle');
+$renderer->setNewStatus(1);
+$renderer->setFields(['vorname','nachname','spendenbetrag']);
+$renderer->setFramework('bootstrap5');
+$renderer->setDisplayMode('table');
+
+echo $renderer->render();
+```
+
+---
+
+### 4) Template – Assets
+
+#### Im `<head>` einfügen
+
+Beispiel für Bootstrap 5:
+
+```html
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+```
+
+#### Vor `</body>` einfügen
+
+Beispiel für Bootstrap 5:
+
+```html
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+```
+
+---
+
+### 5) Suche aktivieren (Live-Filter)
+
+Vor `</body>` ins Template einfügen:
+
+```html
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const input = document.getElementById('live-search');
+  const tbody = document.getElementById('data-table');
+  if (!input || !tbody) return;
+
+  input.addEventListener('input', () => {
+    const q = input.value.toLowerCase();
+    tbody.querySelectorAll('tr').forEach(tr =>
+      tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none'
+    );
+  });
+});
+</script>
+```
+
+---
+
+### 6) Häufige Stolperfallen
+
+- ❌ **Nur bootstrap-grid.css geladen** → Buttons & Tabellen bleiben unstyled
+- ❌ **Kein status-Feld vorhanden** → Insert speichert nicht
+- ❌ **Bootstrap-Icons nicht geladen** → Aktionen unsichtbar
+- ❌ **Suche ohne JS** → Eingabe tut nichts
+
+---
+
+### Support
+
+Bei Problemen prüfen:
+1. Ist YForm aktiviert?
+2. Existiert die Tabelle mit `status`-Feld?
+3. Sind alle CSS/JS-Assets im Template eingebunden?
+4. Wurde das Project-AddOn re-installiert?
+
