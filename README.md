@@ -70,6 +70,24 @@ $renderer->setDisplayMode('list');
 $renderer->setShowActions(false); // nur Anzeige, keine CRUD-Aktionen
 ```
 
+### Link-Muster für den Bearbeiten-Button
+
+Standardmäßig zeigen alle Links auf den aktuell aufgerufenen Artikel. Mit `setArticleId()` und `setClangId()` kann eine andere REDAXO-Seite angegeben werden.
+
+```php
+$renderer->setArticleId(42);        // CRUD läuft auf Artikel 42
+$renderer->setClangId(2);           // optional: Sprach-ID
+```
+
+Soll die Bearbeiten-Schaltfläche auf eine völlig andere URL zeigen (z. B. eine separate Edit-Seite), kann ein URL-Muster mit dem Platzhalter `{id}` gesetzt werden:
+
+```php
+// Bearbeiten-Links auf Artikel 42 lenken; {id} wird zur Datensatz-ID
+$renderer->setEditLinkPattern(rex_getUrl(42, '', ['func' => 'edit', 'id' => '{id}']));
+```
+
+> **Hinweis:** `setEditLinkPattern()` überschreibt nur den Bearbeiten-Link in der Listenansicht. Lösch- und Sortier-Links nutzen weiterhin die per `setArticleId()` konfigurierte Seite.
+
 ### Sortierung
 
 ```php

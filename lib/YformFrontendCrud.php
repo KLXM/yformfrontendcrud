@@ -65,6 +65,9 @@ class YformFrontendCrud
     private string $displayMode = 'table';
     private bool $showActions = true;
     private int $redirectSeconds = 5;
+    private ?int $articleId = null;
+    private ?int $clangId = null;
+    private ?string $editLinkPattern = null;
 
     /** @var array<string, string> */
     private array $labels = [
@@ -256,6 +259,35 @@ class YformFrontendCrud
     }
 
     /**
+     * Artikel-ID, auf die alle CRUD-Links zeigen.
+     * Standard: aktuell aufgerufener Artikel (rex_article::getCurrentId()).
+     */
+    public function setArticleId(int $articleId): void
+    {
+        $this->articleId = $articleId;
+    }
+
+    /**
+     * Sprach-ID (clang) für die CRUD-Links. Standard: aktuelle Sprache.
+     */
+    public function setClangId(int $clangId): void
+    {
+        $this->clangId = $clangId;
+    }
+
+    /**
+     * Setzt ein URL-Muster für den Bearbeiten-Link in der Listenansicht.
+     * Der Platzhalter {id} wird durch die jeweilige Datensatz-ID ersetzt.
+     *
+     * Beispiel:
+     *   $crud->setEditLinkPattern(rex_getUrl(42, '', ['func' => 'edit', 'id' => '{id}']));
+     */
+    public function setEditLinkPattern(string $pattern): void
+    {
+        $this->editLinkPattern = $pattern;
+    }
+
+    /**
      * Überschreibt einen einzelnen UI-Text anhand seines Schlüssels.
      *
      * Schlüssel: error_invalid_params, error_invalid_id, error_not_found,
@@ -349,7 +381,7 @@ class YformFrontendCrud
             'renderer' => $this,
         ]);
 
-        $backUrl = rex_getUrl(rex_article::getCurrentId());
+        $backUrl = $this->crudUrl();
 
         return $this->alert('success', $this->label('success_deleted'))
             . $this->redirectCountdown($backUrl);
@@ -369,7 +401,7 @@ class YformFrontendCrud
         }
 
         $yform = $dataset->getForm();
-        $yform->setObjectparams('form_action', rex_getUrl(rex_article::getCurrentId(), '', ['func' => $action, 'id' => $editId]));
+        $yform->setObjectparams('form_action', $this->crudUrl(['func' => $action, 'id' => $editId]));
         $yform->setObjectparams('form_showformafterupdate', 0);
         $yform->setObjectparams('main_id', $editId);
         $yform->setObjectparams('getdata', !$isNew);
@@ -407,7 +439,7 @@ class YformFrontendCrud
                 'renderer' => $this,
             ]);
 
-            $backUrl = rex_getUrl(rex_article::getCurrentId());
+            $backUrl = $this->crudUrl();
             $saveMsg = $isNew ? $this->label('success_saved_new') : $this->label('success_saved_edit');
 
             return $this->alert('success', $saveMsg)
@@ -453,8 +485,8 @@ class YformFrontendCrud
         $buttons = '';
         if ($this->showActions) {
             $buttons = '<div class="' . $this->getCssClass('margin_bottom') . '">'
-                . '<a href="' . rex_getUrl(rex_article::getCurrentId(), '', ['func' => 'add']) . '" class="' . $this->getCssClass('button_primary') . '">' . $this->label('btn_add') . '</a> '
-                . '<a href="' . rex_getUrl(rex_article::getCurrentId()) . '" class="' . $this->getCssClass('button_default') . '">' . $this->label('btn_reset_sort') . '</a>'
+                . '<a href="' . $this->crudUrl(['func' => 'add']) . '" class="' . $this->getCssClass('button_primary') . '">' . $this->label('btn_add') . '</a> '
+                . '<a href="' . $this->crudUrl() . '" class="' . $this->getCssClass('button_default') . '">' . $this->label('btn_reset_sort') . '</a>'
                 . '</div>';
         }
 
@@ -484,7 +516,7 @@ class YformFrontendCrud
                 $sortIcon = $currentSortOrder === 'ASC' ? ' &uarr;' : ' &darr;';
             }
             $toggleOrder = $currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
-            $output .= '<th><a href="' . rex_getUrl(rex_article::getCurrentId(), '', ['sort' => $field, 'order' => $toggleOrder]) . '">'
+            $output .= '<th><a href="' . $this->crudUrl(['sort' => $field, 'order' => $toggleOrder]) . '">'  
                 . htmlspecialchars($label) . $sortIcon
                 . '</a></th>';
         }
@@ -542,9 +574,9 @@ class YformFrontendCrud
 
             if ($this->showActions) {
                 $id = $dataset->getId();
-                $editLink = rex_getUrl(rex_article::getCurrentId(), '', ['func' => 'edit', 'id' => $id]);
-                $deleteLink = rex_getUrl(rex_article::getCurrentId(), '', ['func' => 'delete', 'id' => $id]);
-                $cardHtml .= '<div class="actions">'
+                $editLink = $this->editUrl($id);
+                $deleteLink = $this->crudUrl(['func' => 'delete', 'id' => $id]);
+                $cardHtml .= '<div class="actions">'  
                     . '<a href="' . $editLink . '" class="' . $this->getCssClass('button_default') . '">' . $this->getEditIcon() . ' ' . $this->label('action_edit') . '</a> '
                     . '<a href="' . $deleteLink . '" class="' . $this->getCssClass('button_default') . '" ' . $this->confirmDeleteAttr() . '>' . $this->getDeleteIcon() . ' ' . $this->label('action_delete') . '</a>'
                     . '</div>';
@@ -579,9 +611,9 @@ class YformFrontendCrud
 
             if ($this->showActions) {
                 $id = $dataset->getId();
-                $editLink = rex_getUrl(rex_article::getCurrentId(), '', ['func' => 'edit', 'id' => $id]);
-                $deleteLink = rex_getUrl(rex_article::getCurrentId(), '', ['func' => 'delete', 'id' => $id]);
-                $itemHtml .= '<span class="actions">'
+                $editLink = $this->editUrl($id);
+                $deleteLink = $this->crudUrl(['func' => 'delete', 'id' => $id]);
+                $itemHtml .= '<span class="actions">'  
                     . '<a href="' . $editLink . '">' . $this->getEditIcon() . '</a> '
                     . '<a href="' . $deleteLink . '" ' . $this->confirmDeleteAttr() . '>' . $this->getDeleteIcon() . '</a>'
                     . '</span>';
@@ -601,6 +633,26 @@ class YformFrontendCrud
     }
 
     // ─── Interne Helfer ───────────────────────────────────────────────────────
+
+    /**
+     * Erzeugt eine CRUD-URL für den konfigurierten Artikel.
+     *
+     * @param array<string, mixed> $params
+     */
+    private function crudUrl(array $params = []): string
+    {
+        $articleId = $this->articleId ?? rex_article::getCurrentId();
+        $clangId   = $this->clangId ?? '';
+        return rex_getUrl($articleId, $clangId, $params);
+    }
+
+    private function editUrl(int $id): string
+    {
+        if ($this->editLinkPattern !== null) {
+            return str_replace('{id}', (string) $id, $this->editLinkPattern);
+        }
+        return $this->crudUrl(['func' => 'edit', 'id' => $id]);
+    }
 
     private function loadFieldLabels(): void
     {
@@ -656,8 +708,8 @@ class YformFrontendCrud
 
     private function renderActionCell(int $id): string
     {
-        $editLink = rex_getUrl(rex_article::getCurrentId(), '', ['func' => 'edit', 'id' => $id]);
-        $deleteLink = rex_getUrl(rex_article::getCurrentId(), '', ['func' => 'delete', 'id' => $id]);
+        $editLink = $this->editUrl($id);
+        $deleteLink = $this->crudUrl(['func' => 'delete', 'id' => $id]);
 
         if ($this->framework === 'uikit') {
             return '<td>
