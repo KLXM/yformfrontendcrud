@@ -1,4 +1,4 @@
-# yformfrontendcrud
+# YFormFrontendCRUD
 
 Frontend-CRUD für REDAXO YForm-Tabellen mit flexiblen CSS-Frameworks, Extension Points und Format-Callbacks.
 
