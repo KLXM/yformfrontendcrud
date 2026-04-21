@@ -315,14 +315,6 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 ```
 
----
-
-## Abwärtskompatibilität
-
-Die bisherige Klasse `YFormDataListRenderer` steht weiterhin als Alias zur Verfügung und kann ohne Anpassungen weiter verwendet werden. Ein Umstieg auf den neuen Namen mit `use`-Statement wird empfohlen.
-
----
-
 ## Häufige Fehlerquellen
 
 - **Kein `status`-Feld in der Tabelle** → Insert schlägt fehl, wenn `setNewStatus` gesetzt ist
