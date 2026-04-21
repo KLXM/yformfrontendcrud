@@ -269,23 +269,58 @@ use FriendsOfRedaxo\YformFrontendCrud\YformFrontendCrud;
 if (rex::isFrontend() && class_exists('rex_ycom_auth') && rex_ycom_auth::getUser() !== null) {
 
     $renderer = new YformFrontendCrud();
-    $renderer->setTableName('rex_blog_articles');
-    $renderer->setFields(['title', 'createdate', 'status']);
-    $renderer->setDefaultSortField('createdate');
-    $renderer->setDefaultSortOrder('DESC');
-    $renderer->setFramework('bootstrap5');
-    $renderer->setDisplayMode('table');
-    $renderer->addWhereCondition('author_id', '=', rex_ycom_auth::getUser()->getId());
-    $renderer->setNewStatus(0);
-    $renderer->setIdentId('author_id', rex_ycom_auth::getUser()->getId());
 
-    $renderer->setFormatCallback('createdate', fn($v) => date('d.m.Y', strtotime($v)));
+    // Tabelle und Felder
+    $renderer->setTableName('rex_blog_articles');
+    $renderer->setFields(['title', 'date', 'status', 'author']);
+
+    // Sortierung
+    $renderer->setDefaultSortField('date');
+    $renderer->setDefaultSortOrder('DESC');
+
+    // Filter
+    $renderer->addWhereCondition('status', '=', 1);
+
+    // Framework und Anzeigemodus
+    $renderer->setFramework('bootstrap5');
+    $renderer->setDisplayMode('cards'); // table | cards | list
+
+    // Status beim Anlegen/Bearbeiten
+    $renderer->setNewStatus(0);  // neuer Datensatz: offline
+    $renderer->setEditStatus(1); // bearbeiteter Datensatz: online
+
+    // Aktuellen ycom-Nutzer als Autor speichern
+    $renderer->setUserField('author');
+
+    // YForm-Formulartemplate
+    $renderer->setFormYtemplate('bootstrap5,project');
+
+    // Identifikationsfeld (z. B. zum Verknüpfen mit dem eingeloggten Nutzer)
+    // Wichtig: Das Feld muss in der YForm-Tabelle existieren!
+    $renderer->setIdentId('user_id', rex_ycom_auth::getUser()->getId());
+
+    // Format-Callbacks
+    $renderer->setFormatCallback('title', function($value) {
+        return '<strong>' . htmlspecialchars($value) . '</strong>';
+    });
+    $renderer->setFormatCallback('date', function($value) {
+        return date('d.m.Y', strtotime($value));
+    });
+
+    // Übersetzungen für Feldwerte
     $renderer->setTranslations([
         'status' => [
             '1' => '<span class="badge bg-success">Online</span>',
             '0' => '<span class="badge bg-secondary">Entwurf</span>',
         ],
     ]);
+
+    // Texte anpassen (optional)
+    $renderer->setLabel('btn_add', 'Neuen Artikel anlegen');
+    $renderer->setLabel('confirm_delete', 'Artikel wirklich löschen?');
+
+    // Weiterleitungs-Countdown in Sekunden (Standard: 5)
+    $renderer->setRedirectSeconds(3);
 
     echo $renderer->render();
 }
@@ -297,7 +332,7 @@ if (rex::isFrontend() && class_exists('rex_ycom_auth') && rex_ycom_auth::getUser
 
 Das Suchfeld mit der ID `live-search` ist bereits im HTML enthalten. Dieses Snippet vor `</body>` einfügen:
 
-> **Hinweis zu CSP:** Das Inline-Skript für den Weiterleitungs-Countdown verwendet automatisch den REDAXO-CSP-Nonce (`rex_response::getCSPNonce()`). Das Suchfeld-Snippet muss manuell mit einem Nonce versehen werden, falls eine `Content-Security-Policy` aktiv ist.
+> **Hinweis zu CSP:** Das Inline-Skript für den Weiterleitungs-Countdown verwendet automatisch den REDAXO-CSP-Nonce (`rex_response::getNonce()`). Das Suchfeld-Snippet muss manuell mit einem Nonce versehen werden, falls eine `Content-Security-Policy` aktiv ist.
 
 ```html
 <script>
