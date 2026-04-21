@@ -516,7 +516,7 @@ class YformFrontendCrud
                 $sortIcon = $currentSortOrder === 'ASC' ? ' &uarr;' : ' &darr;';
             }
             $toggleOrder = $currentSortOrder === 'ASC' ? 'DESC' : 'ASC';
-            $output .= '<th><a href="' . $this->crudUrl(['sort' => $field, 'order' => $toggleOrder]) . '">'  
+            $output .= '<th><a href="' . $this->crudUrl(['sort' => $field, 'order' => $toggleOrder]) . '">'
                 . htmlspecialchars($label) . $sortIcon
                 . '</a></th>';
         }
@@ -576,7 +576,7 @@ class YformFrontendCrud
                 $id = $dataset->getId();
                 $editLink = $this->editUrl($id);
                 $deleteLink = $this->crudUrl(['func' => 'delete', 'id' => $id]);
-                $cardHtml .= '<div class="actions">'  
+                $cardHtml .= '<div class="actions">'
                     . '<a href="' . $editLink . '" class="' . $this->getCssClass('button_default') . '">' . $this->getEditIcon() . ' ' . $this->label('action_edit') . '</a> '
                     . '<a href="' . $deleteLink . '" class="' . $this->getCssClass('button_default') . '" ' . $this->confirmDeleteAttr() . '>' . $this->getDeleteIcon() . ' ' . $this->label('action_delete') . '</a>'
                     . '</div>';
@@ -613,7 +613,7 @@ class YformFrontendCrud
                 $id = $dataset->getId();
                 $editLink = $this->editUrl($id);
                 $deleteLink = $this->crudUrl(['func' => 'delete', 'id' => $id]);
-                $itemHtml .= '<span class="actions">'  
+                $itemHtml .= '<span class="actions">'
                     . '<a href="' . $editLink . '">' . $this->getEditIcon() . '</a> '
                     . '<a href="' . $deleteLink . '" ' . $this->confirmDeleteAttr() . '>' . $this->getDeleteIcon() . '</a>'
                     . '</span>';
