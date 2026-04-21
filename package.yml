@@ -1,0 +1,15 @@
+package: yformfrontendcrud
+version: '1.0.0'
+author: 'KLXM Crossmedia'
+supportpage: 'https://github.com/KLXM/yformfrontendcrud'
+
+description:
+    de: 'Frontend-CRUD für YForm-Tabellen – mehrere CSS-Frameworks, Extension Points und Format-Callbacks'
+    en: 'Frontend CRUD for YForm tables – multiple CSS frameworks, extension points and format callbacks'
+
+requires:
+    redaxo: '^5.15.0'
+    php:
+        version: '>=8.1'
+    packages:
+        yform: '>=4.0'

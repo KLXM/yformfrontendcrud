@@ -1,485 +1,331 @@
-# oneFileYFormCRUD
+# yformfrontendcrud
 
-Frontend-CRUD für REDAXO YForm Tabellen mit flexiblen CSS-Frameworks
-(Kurzanleitung für Beginners/Designers zuunterst)
+Frontend-CRUD für REDAXO YForm-Tabellen mit flexiblen CSS-Frameworks, Extension Points und Format-Callbacks.
 
-## YFormDataListRenderer Class
+## Installation
 
-### Installation
+Das AddOn über den REDAXO-Installer oder manuell in `redaxo/src/addons/yformfrontendcrud/` installieren. Anschließend im Backend unter **AddOns** aktivieren.
 
-Die `YFormDataListRenderer`-Class in den Lib-Ordner des Projekt-AddOns kopieren und bei Bedarf gestalterisch anpassen.
+**Voraussetzungen:**
+- REDAXO >= 5.15
+- YForm >= 4.0
 
-### Überblick
+## Verwendung
 
-Die `YFormDataListRenderer`-Class ist ein flexibles Tool, um Datensätze aus Tabellen, die mit YForm in REDAXO verwaltet werden, anzuzeigen und zu verwalten. Diese Class eignet sich für eine Vielzahl von Anwendungsfällen, wie z. B. Blog-Artikel, News-Einträge, Produkte oder andere Datentypen.
-
-**NEU: Fragment/Template-System für CSS-Frameworks**
-Die Class unterstützt jetzt verschiedene CSS-Frameworks über ein flexibles Fragment-System:
-- **UIKit** (Standard)
-- **Bootstrap 3**
-- **Bootstrap 4** 
-- **Bootstrap 5**
-- **Custom CSS** (eigene Framework-Definition)
-
-Zusätzlich können verschiedene Anzeigemodi verwendet werden:
-- **Table** (Tabellenansicht)
-- **Cards** (Kartenansicht)
-- **List** (Listenansicht)
-
-### Framework-Konfiguration
-
-#### Framework setzen
 ```php
-// UIKit (Standard)
-$renderer->setFramework('uikit');
+use FriendsOfRedaxo\YformFrontendCrud\YformFrontendCrud;
 
-// Bootstrap 5
+$renderer = new YformFrontendCrud();
+$renderer->setTableName('rex_meinetabelle');
+$renderer->setFields(['vorname', 'nachname', 'status']);
 $renderer->setFramework('bootstrap5');
+$renderer->setDisplayMode('table');
 
-// Bootstrap 4
+echo $renderer->render();
+```
+
+---
+
+## Konfiguration
+
+### Framework
+
+```php
+$renderer->setFramework('uikit');      // Standard
+$renderer->setFramework('bootstrap5');
 $renderer->setFramework('bootstrap4');
-
-// Bootstrap 3
 $renderer->setFramework('bootstrap3');
-
-// Custom CSS
 $renderer->setFramework('custom');
 ```
 
-#### Anzeigemodus konfigurieren
+### Anzeigemodus
+
 ```php
-// Tabellenansicht (Standard)
-$renderer->setDisplayMode('table');
-
-// Kartenansicht
+$renderer->setDisplayMode('table');  // Standard
 $renderer->setDisplayMode('cards');
-
-// Listenansicht
 $renderer->setDisplayMode('list');
 ```
 
-#### Aktions-Buttons ein-/ausblenden
-```php
-// Aktionen anzeigen (Standard)
-$renderer->setShowActions(true);
+### Aktions-Buttons
 
-// Aktionen ausblenden (nur Anzeige, keine Bearbeitung)
-$renderer->setShowActions(false);
+```php
+$renderer->setShowActions(false); // nur Anzeige, keine CRUD-Aktionen
 ```
 
-#### Individuelle CSS-Klassen anpassen
+### Sortierung
+
 ```php
-// Einzelne CSS-Klasse überschreiben
+$renderer->setDefaultSortField('createdate');
+$renderer->setDefaultSortOrder('DESC');
+```
+
+### WHERE-Filter
+
+```php
+$renderer->addWhereCondition('status', '=', 1);
+```
+
+### Status beim Speichern
+
+```php
+$renderer->setNewStatus(0);  // neuer Datensatz: offline
+$renderer->setEditStatus(1); // bearbeiteter Datensatz: online
+```
+
+### Autor-Feld (ycom)
+
+```php
+$renderer->setUserField('author'); // speichert den Login-Namen des aktuellen ycom-Nutzers
+```
+
+### Identifikationsfeld (z. B. Besitzer-Relation)
+
+```php
+$renderer->setIdentId('user_id', rex_ycom_auth::getUser()->getId());
+```
+
+### YForm-Template
+
+```php
+$renderer->setFormYtemplate('bootstrap5,project');
+```
+
+### Format-Callbacks
+
+```php
+$renderer->setFormatCallback('title', function($value) {
+    return '<strong>' . htmlspecialchars($value) . '</strong>';
+});
+
+$renderer->setFormatCallback('createdate', function($value) {
+    return date('d.m.Y', strtotime($value));
+});
+```
+
+### Übersetzungen
+
+```php
+$renderer->setTranslations([
+    'status' => [
+        '1' => '<span class="badge bg-success">Online</span>',
+        '0' => '<span class="badge bg-danger">Offline</span>',
+    ],
+]);
+```
+
+### CSS-Klassen überschreiben
+
+```php
+// Einzelne Klasse
 $renderer->setCssClass('bootstrap5', 'button_primary', 'btn btn-success btn-lg');
 
-// Komplettes CSS-Template definieren
-$customTemplate = [
-    'alert_success' => 'message success',
-    'button_primary' => 'button primary large',
-    'table' => 'data-table zebra hoverable',
-    // ... weitere Definitionen
-];
-$renderer->setCssTemplate('myframework', $customTemplate);
-```
-
-### Wie es funktioniert
-
-#### 1. Renderer erstellen
-
-Erstellen Sie eine Instanz der `YFormDataListRenderer`-Class:
-
-```php
-$renderer = new YFormDataListRenderer();
-```
-
-#### 2. Tabelle festlegen
-
-Legen Sie die Tabelle fest, aus der die Datensätze abgerufen werden sollen. Zum Beispiel:
-
-```php
-$renderer->setTableName('rex_blog_articles');
-```
-
-#### 3. Felder definieren
-
-Bestimmen Sie die Felder, die in der Liste angezeigt werden sollen:
-
-```php
-$renderer->setFields(['title', 'date', 'status', 'author']);
-```
-
-#### 4. Bearbeitungslink-Muster festlegen
-
-Definieren Sie das URL-Muster für den Bearbeitungslink. `{id}` ist dabei der Platzhalter für die Datensatz-ID:
-
-```php
-$renderer->setEditLinkPattern(rex_getUrl('', '', ['func' => 'edit', 'id' => '{id}']));
-```
-
-#### 5. Standard-Sortieroptionen festlegen
-
-Legen Sie das Standardfeld und die Standardreihenfolge für die Sortierung fest:
-
-```php
-$renderer->setDefaultSortField('date');
-$renderer->setDefaultSortOrder('DESC');
-```
-
-#### 6. Bedingungen für die Datenauswahl hinzufügen
-
-Fügen Sie Bedingungen für die Auswahl der Datensätze hinzu. Zum Beispiel:
-
-```php
-$renderer->addWhereCondition('status', '=', 1);
-```
-
-#### 7. Übersetzungen einrichten (optional)
-
-Definieren Sie Übersetzungen für bestimmte Feldwerte:
-
-```php
-$renderer->setTranslations([
-    'status' => [
-        '1' => '<span style="color: green; font-weight: bold;">Online</span>',
-        '0' => '<span style="color: red;">Offline</span>',
-    ]
+// Komplettes eigenes Template
+$renderer->setCssTemplate('custom', [
+    'alert_success'    => 'message success',
+    'alert_danger'     => 'message error',
+    'button_primary'   => 'button primary',
+    'button_default'   => 'button secondary',
+    'input'            => 'form-field',
+    'table'            => 'data-table',
+    'overflow_auto'    => 'overflow-auto',
+    'margin_bottom'    => 'mb',
+    'background_muted' => 'bg-muted',
+    'padding'          => 'p',
+    'grid_small'       => 'grid-small',
+    'tooltip'          => 'tooltip',
+    'icon'             => 'icon',
 ]);
 ```
 
-#### 8. Standardstatus für neue und bearbeitete Datensätze (optional)
+### Texte anpassen
 
-Legen Sie fest, welcher Status beim Erstellen oder Bearbeiten von Datensätzen gesetzt werden soll:
-
-```php
-$renderer->setNewStatus(0);  // Neuer Datensatz ist standardmäßig "Offline"
-$renderer->setEditStatus(1); // Bearbeiteter Datensatz wird auf "Online" gesetzt
-```
-
-#### 9. Benutzerfeld festlegen (optional)
-
-Speichern Sie den aktuellen Benutzer als Autor:
+Alle deutschen UI-Texte sind überschreibbar – ideal für Mehrsprachigkeit oder individuelle Formulierungen.
 
 ```php
-$renderer->setUserField('author');
-```
+// Einzelnen Text ändern
+$renderer->setLabel('btn_add', 'Neuen Artikel anlegen');
+$renderer->setLabel('confirm_delete', 'Eintrag wirklich unwiderruflich löschen?');
+$renderer->setLabel('search_placeholder', 'Suche ...');
 
-#### 10. Formulartemplate anpassen (optional)
-
-Legen Sie ein benutzerdefiniertes YForm-Template fest:
-
-```php
-$renderer->setFormYtemplate('custom_template');
-```
-
-#### 11. Formatierungs-Callbacks hinzufügen
-
-Fügen Sie Formatierungs-Callbacks für bestimmte Felder hinzu:
-
-```php
-$renderer->setFormatCallback('title', function($value) {
-    return '<strong>' . htmlspecialchars($value) . '</strong>';
-});
-
-$renderer->setFormatCallback('date', function($value) {
-    return date('d.m.Y', strtotime($value));
-});
-```
-
-#### 12. Identifikationsfeld festlegen (optional)
-
-Falls nötig, können Sie ein Identifikationsfeld und dessen Wert setzen:
-
-```php
-$renderer->setIdentId('user_id', rex_ycom_auth::getUser()->getId());
-```
-user_id ist nur ein Beispiel es kann jedes Feld genommen werden das ein Int annimmt. 
-Hier wird die ycom user id gespeichert (ideal für eine Relation) um den Ersteller zu tracken.  
-
-
-
-#### 13. Liste rendern
-
-Zum Schluss rendern Sie die Liste und geben sie aus:
-
-```php
-if (rex::isFrontend() && rex_ycom_auth::getUser() !== null) {
-    echo $renderer->render();
-}
-```
-
-### Vollständiges Beispiel
-
-Hier ein vollständiger Beispielcode, der alle oben genannten Methoden verwendet:
-
-```php
-<?php
-
-$renderer = new YFormDataListRenderer();
-
-// Tabelle festlegen
-$renderer->setTableName('rex_blog_articles');
-
-// Felder definieren
-$renderer->setFields(['title', 'date', 'status', 'author']);
-
-// Bearbeitungslink-Muster festlegen
-$renderer->setEditLinkPattern(rex_getUrl('', '', ['func' => 'edit', 'id' => '{id}']));
-
-// Standard-Sortieroptionen festlegen
-$renderer->setDefaultSortField('date');
-$renderer->setDefaultSortOrder('DESC');
-
-// Bedingungen für die Datenauswahl hinzufügen
-$renderer->addWhereCondition('status', '=', 1);
-
-// NEU: Framework konfigurieren (Bootstrap 5 statt UIKit)
-$renderer->setFramework('bootstrap5');
-
-// NEU: Anzeigemodus auf Karten setzen
-$renderer->setDisplayMode('cards');
-
-// Übersetzungen einrichten
-$renderer->setTranslations([
-    'status' => [
-        '1' => '<span style="color: green; font-weight: bold;">Online</span>',
-        '0' => '<span style="color: red;">Offline</span>',
-    ]
+// Mehrere Texte auf einmal
+$renderer->setLabels([
+    'btn_add'           => 'New entry',
+    'btn_reset_sort'    => 'Reset sorting',
+    'search_placeholder'=> 'Search entries...',
+    'col_actions'       => 'Actions',
+    'action_edit'       => 'Edit',
+    'action_delete'     => 'Delete',
+    'confirm_delete'    => 'Really delete?',
+    'success_deleted'   => 'Entry deleted.',
+    'success_saved_new' => 'Entry created.',
+    'success_saved_edit'=> 'Entry updated.',
+    'form_title_new'    => 'New entry',
+    'form_title_edit'   => 'Edit entry',
 ]);
+```
 
-// Standardstatus für neue und bearbeitete Datensätze festlegen
-$renderer->setNewStatus(0);
-$renderer->setEditStatus(1);
+#### Alle Label-Schlüssel
 
-// Benutzerfeld festlegen (optional)
-$renderer->setUserField('author');
+| Schlüssel | Standard-Text |
+|---|---|
+| `error_invalid_params` | Ungültige Parameter übergeben. |
+| `error_invalid_id` | Ungültige ID. |
+| `error_not_found` | Fehler: Datensatz konnte nicht gefunden werden. |
+| `error_delete_prevented` | Löschen wurde durch eine Erweiterung verhindert. |
+| `error_delete_failed` | Fehler: Datensatz konnte nicht gelöscht werden. |
+| `error_table_not_found` | Tabelle "%s" nicht gefunden. |
+| `success_deleted` | Datensatz wurde erfolgreich gelöscht. |
+| `success_saved_new` | Der Datensatz wurde erfolgreich erstellt. |
+| `success_saved_edit` | Der Datensatz wurde erfolgreich aktualisiert. |
+| `form_title_new` | Neuer Eintrag |
+| `form_title_edit` | Datensatz aktualisieren |
+| `btn_add` | Neuen Eintrag erstellen |
+| `btn_reset_sort` | Standard-Sortierung wiederherstellen |
+| `search_placeholder` | Nach Einträgen suchen... |
+| `col_actions` | Aktionen |
+| `action_edit` | Bearbeiten |
+| `action_delete` | Löschen |
+| `confirm_delete` | Wirklich löschen? |
+| `redirect_countdown` | Sie werden in %s Sekunden zur Liste zurückgeleitet. |
+| `redirect_link` | Klicken Sie hier |
+| `redirect_back` | , um sofort zurückzukehren. |
 
-// Optional: Formulartemplate anpassen
-// $renderer->setFormYtemplate('custom_template');
+### Weiterleitungs-Countdown
 
-// Callbacks für die Formatierung
-$renderer->setFormatCallback('title', function($value) {
-    return '<strong>' . htmlspecialchars($value) . '</strong>';
+```php
+// Sekunden nach Speichern/Löschen bis zur automatischen Weiterleitung (Standard: 5)
+$renderer->setRedirectSeconds(3);
+```
+
+---
+
+## Extension Points
+
+Die Klasse bietet sieben Extension Points, über die andere AddOns oder Projektcode eingreifen können:
+
+| Konstante | EP-Name | Subject | Verwendung |
+|-----------|---------|---------|------------|
+| `YformFrontendCrud::EP_QUERY` | `YFORMFRONTENDCRUD_QUERY` | `rex_yform_manager_query` | Query vor Ausführung modifizieren |
+| `YformFrontendCrud::EP_BEFORE_DELETE` | `YFORMFRONTENDCRUD_BEFORE_DELETE` | `bool` | Löschen verhindern (`return false`) |
+| `YformFrontendCrud::EP_AFTER_DELETE` | `YFORMFRONTENDCRUD_AFTER_DELETE` | `int $deletedId` | Nach Löschung reagieren |
+| `YformFrontendCrud::EP_BEFORE_SAVE` | `YFORMFRONTENDCRUD_BEFORE_SAVE` | `rex_yform` | Formular vor Ausführung modifizieren |
+| `YformFrontendCrud::EP_AFTER_SAVE` | `YFORMFRONTENDCRUD_AFTER_SAVE` | `rex_yform_manager_dataset` | Nach Speichern reagieren |
+| `YformFrontendCrud::EP_OUTPUT_ROW` | `YFORMFRONTENDCRUD_OUTPUT_ROW` | `string $rowHtml` | Zeilen-HTML modifizieren |
+| `YformFrontendCrud::EP_AFTER_RENDER` | `YFORMFRONTENDCRUD_AFTER_RENDER` | `string $output` | Gesamtausgabe modifizieren |
+
+### Beispiele
+
+#### Zusätzlichen Query-Filter setzen
+
+```php
+rex_extension::register(YformFrontendCrud::EP_QUERY, function(rex_extension_point $ep) {
+    $query = $ep->getSubject();
+    $query->whereRaw('`createdate` >= ?', [date('Y-m-d', strtotime('-30 days'))]);
+    return $query;
 });
-
-$renderer->setFormatCallback('date', function($value) {
-    return date('d.m.Y', strtotime($value));
-});
-
-// Identifikationsfeld festlegen (optional), bitte achte darauf dass das Feld exitiert
-$renderer->setIdentId('user_id', rex_ycom_auth::getUser()->getId());
-
-// Liste rendern und ausgeben
-if (rex::isFrontend() && rex_ycom_auth::getUser() !== null) {
-    echo $renderer->render();
-}
-
-?>
 ```
 
-### Framework-spezifische Beispiele
+#### Löschen für bestimmte Einträge verhindern
 
-#### Bootstrap 5 mit Kartenansicht
 ```php
-$renderer = new YFormDataListRenderer();
-$renderer->setTableName('rex_products');
-$renderer->setFields(['name', 'price', 'category']);
-$renderer->setFramework('bootstrap5');
-$renderer->setDisplayMode('cards');
-echo $renderer->render();
-```
-
-#### Bootstrap 4 mit angepassten CSS-Klassen
-```php
-$renderer = new YFormDataListRenderer();
-$renderer->setTableName('rex_news');
-$renderer->setFields(['title', 'teaser', 'createdate']);
-$renderer->setFramework('bootstrap4');
-$renderer->setCssClass('bootstrap4', 'button_primary', 'btn btn-success btn-lg');
-$renderer->setCssClass('bootstrap4', 'table', 'table table-dark table-striped');
-echo $renderer->render();
-```
-
-#### Nur-Anzeige Modus (ohne Edit-Funktionen)
-```php
-$renderer = new YFormDataListRenderer();
-$renderer->setTableName('rex_events');
-$renderer->setFields(['title', 'date', 'location']);
-$renderer->setFramework('bootstrap5');
-$renderer->setDisplayMode('list');
-$renderer->setShowActions(false); // Keine Bearbeiten/Löschen-Buttons
-echo $renderer->render();
-```
-
-#### Eigenes CSS-Framework definieren
-```php
-$renderer = new YFormDataListRenderer();
-$renderer->setTableName('rex_gallery');
-$renderer->setFields(['title', 'image', 'description']);
-$renderer->setFramework('custom');
-
-// Eigene CSS-Klassen definieren
-$customTemplate = [
-    'alert_success' => 'message success',
-    'alert_danger' => 'message error',
-    'button_primary' => 'button primary large',
-    'button_default' => 'button secondary',
-    'table' => 'data-table zebra hoverable',
-    'input' => 'form-field',
-    // ... weitere CSS-Definitionen
-];
-$renderer->setCssTemplate('custom', $customTemplate);
-echo $renderer->render();
-```
-
-### JavaScript einbinden
-
-Um die Benutzerfreundlichkeit zu verbessern, können Sie optional JavaScript für Funktionen wie die Live-Suche oder einen Countdown-Timer hinzufügen.
-
-```javascript
-document.addEventListener("DOMContentLoaded", function() {
-    var liveSearchElement = document.getElementById("live-search");
-    if (liveSearchElement) {
-        liveSearchElement.addEventListener("keyup", function() {
-            var searchValue = this.value.toLowerCase();
-            var tableRows = document.getElementById("data-table").getElementsByTagName("tr");
-
-            for (var i = 0; i < tableRows.length; i++) {
-                var rowText = tableRows[i].textContent.toLowerCase();
-                if (rowText.indexOf(searchValue) > -1) {
-                    tableRows[i].style.display = "";
-                } else {
-                    tableRows[i].style.display = "none";
-                }
-            }
-        });
-    }
-
-    var countdownElement = document.getElementById("countdown");
-    if (countdownElement) {
-        var countdown = parseInt(countdownElement.textContent, 10);
-        var countdownInterval = setInterval(function() {
-            countdown--;
-            countdownElement.textContent = countdown;
-            if (countdown <= 0) {
-                clearInterval(countdownInterval);
-                window.location.href = window.location.pathname;
-            }
-        }, 1000);
+rex_extension::register(YformFrontendCrud::EP_BEFORE_DELETE, function(rex_extension_point $ep) {
+    $dataset = $ep->getParam('dataset');
+    if ($dataset->getValue('protected') == 1) {
+        return false; // Löschung abbrechen
     }
 });
 ```
 
-
-# Kurzanleitung für Beginner/Webdesigner:
-
-
-## YForm Data List Renderer – Installationsanleitung
-
-Diese Anleitung beschreibt die Einrichtung des **YFormDataListRenderer** für REDAXO 5 mit YForm.
-
----
-
-### 1) Voraussetzungen
-
-- AddOn **yform** aktiviert
-- YForm-Tabelle vorhanden (z. B. `rex_meinetabelle`)
-- Tabelle hat ein Feld `status` (checkbox, Default 1)
-
----
-
-### 2) Class einbinden
-
-#### Datei kopieren
-`YFormDataListRenderer.php` kopieren nach:
-```
-/redaxo/src/addons/project/lib/
-```
-
-#### Boot-Datei anpassen
-Folgenden Code in `/redaxo/src/addons/project/boot.php` einfügen:
+#### Nach dem Speichern eine Aktion auslösen
 
 ```php
-require_once __DIR__ . '/lib/YFormDataListRenderer.php';
+rex_extension::register(YformFrontendCrud::EP_AFTER_SAVE, function(rex_extension_point $ep) {
+    $dataset = $ep->getSubject();
+    $isNew   = $ep->getParam('isNew');
+    // z. B. Cache leeren, E-Mail senden, etc.
+});
 ```
 
-#### AddOn re-installieren
-Im Backend unter **Addons > Project**: auf **re-installieren** klicken
-
----
-
-### 3) Modul-Ausgabe (Minimal)
+#### Zeilen-HTML erweitern (z. B. hervorgehobene Zeile)
 
 ```php
-$renderer = new YFormDataListRenderer();
-$renderer->setTableName('rex_meinetabelle');
-$renderer->setNewStatus(1);
-$renderer->setFields(['vorname','nachname','spendenbetrag']);
-$renderer->setFramework('bootstrap5');
-$renderer->setDisplayMode('table');
-
-echo $renderer->render();
+rex_extension::register(YformFrontendCrud::EP_OUTPUT_ROW, function(rex_extension_point $ep) {
+    $dataset = $ep->getParam('dataset');
+    $html    = $ep->getSubject();
+    if ($dataset->getValue('featured') == 1) {
+        $html = str_replace('<tr>', '<tr class="table-warning">', $html);
+    }
+    return $html;
+});
 ```
 
 ---
 
-### 4) Template – Assets
+## Vollständiges Beispiel
 
-#### Im `<head>` einfügen
+```php
+use FriendsOfRedaxo\YformFrontendCrud\YformFrontendCrud;
 
-Beispiel für Bootstrap 5:
+if (rex::isFrontend() && class_exists('rex_ycom_auth') && rex_ycom_auth::getUser() !== null) {
 
-```html
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-```
+    $renderer = new YformFrontendCrud();
+    $renderer->setTableName('rex_blog_articles');
+    $renderer->setFields(['title', 'createdate', 'status']);
+    $renderer->setDefaultSortField('createdate');
+    $renderer->setDefaultSortOrder('DESC');
+    $renderer->setFramework('bootstrap5');
+    $renderer->setDisplayMode('table');
+    $renderer->addWhereCondition('author_id', '=', rex_ycom_auth::getUser()->getId());
+    $renderer->setNewStatus(0);
+    $renderer->setIdentId('author_id', rex_ycom_auth::getUser()->getId());
 
-#### Vor `</body>` einfügen
+    $renderer->setFormatCallback('createdate', fn($v) => date('d.m.Y', strtotime($v)));
+    $renderer->setTranslations([
+        'status' => [
+            '1' => '<span class="badge bg-success">Online</span>',
+            '0' => '<span class="badge bg-secondary">Entwurf</span>',
+        ],
+    ]);
 
-Beispiel für Bootstrap 5:
-
-```html
-<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+    echo $renderer->render();
+}
 ```
 
 ---
 
-### 5) Suche aktivieren (Live-Filter)
+## Live-Suche (JavaScript)
 
-Vor `</body>` ins Template einfügen:
+Das Suchfeld mit der ID `live-search` ist bereits im HTML enthalten. Dieses Snippet vor `</body>` einfügen:
+
+> **Hinweis zu CSP:** Das Inline-Skript für den Weiterleitungs-Countdown verwendet automatisch den REDAXO-CSP-Nonce (`rex_response::getCSPNonce()`). Das Suchfeld-Snippet muss manuell mit einem Nonce versehen werden, falls eine `Content-Security-Policy` aktiv ist.
 
 ```html
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-  const input = document.getElementById('live-search');
-  const tbody = document.getElementById('data-table');
-  if (!input || !tbody) return;
-
-  input.addEventListener('input', () => {
-    const q = input.value.toLowerCase();
-    tbody.querySelectorAll('tr').forEach(tr =>
-      tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none'
-    );
-  });
+    const input = document.getElementById('live-search');
+    const tbody = document.getElementById('data-table');
+    if (!input || !tbody) return;
+    input.addEventListener('input', () => {
+        const q = input.value.toLowerCase();
+        tbody.querySelectorAll('tr').forEach(tr =>
+            tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none'
+        );
+    });
 });
 </script>
 ```
 
 ---
 
-### 6) Häufige Stolperfallen
+## Abwärtskompatibilität
 
-- ❌ **Nur bootstrap-grid.css geladen** → Buttons & Tabellen bleiben unstyled
-- ❌ **Kein status-Feld vorhanden** → Insert speichert nicht
-- ❌ **Bootstrap-Icons nicht geladen** → Aktionen unsichtbar
-- ❌ **Suche ohne JS** → Eingabe tut nichts
+Die bisherige Klasse `YFormDataListRenderer` steht weiterhin als Alias zur Verfügung und kann ohne Anpassungen weiter verwendet werden. Ein Umstieg auf den neuen Namen mit `use`-Statement wird empfohlen.
 
 ---
 
-### Support
+## Häufige Fehlerquellen
 
-Bei Problemen prüfen:
-1. Ist YForm aktiviert?
-2. Existiert die Tabelle mit `status`-Feld?
-3. Sind alle CSS/JS-Assets im Template eingebunden?
-4. Wurde das Project-AddOn re-installiert?
-
+- **Kein `status`-Feld in der Tabelle** → Insert schlägt fehl, wenn `setNewStatus` gesetzt ist
+- **YForm nicht aktiviert** → Klasse nicht verfügbar
+- **Bootstrap-Icons nicht geladen** → Aktions-Buttons bei Bootstrap 5 unsichtbar
+- **Falscher Tabellenname** → Renderer gibt einen Fehler-Alert aus
