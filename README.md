@@ -24,6 +24,24 @@ $renderer->setDisplayMode('table');
 echo $renderer->render();
 ```
 
+### Minimalbeispiel mit Bearbeiten-Funktion
+
+Das `render()`-Verfahren verwaltet Liste, Formular und Löschen vollständig über URL-Parameter (`func=add`, `func=edit&id=1`, `func=delete&id=1`). Es muss nichts weiter konfiguriert werden:
+
+```php
+use FriendsOfRedaxo\YformFrontendCrud\YformFrontendCrud;
+
+$renderer = new YformFrontendCrud();
+$renderer->setTableName('rex_meinetabelle');
+$renderer->setFields(['vorname', 'nachname', 'email']);
+
+echo $renderer->render();
+```
+
+Die Klasse wechselt automatisch in den Bearbeitungs- bzw. Anlegen-Modus, sobald die entsprechenden URL-Parameter gesetzt sind – kein eigenes Routing nötig.
+
+> **Hinweis:** Das YForm-Formular wird direkt aus der Tabellendefinition generiert. Das Feld `status` muss nicht in `setFields()` aufgeführt sein – es wird intern über `setNewStatus()` / `setEditStatus()` befüllt.
+
 ---
 
 ## Konfiguration
